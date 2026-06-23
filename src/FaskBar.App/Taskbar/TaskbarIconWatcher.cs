@@ -16,6 +16,9 @@ public sealed class TaskbarIconWatcher : IDisposable
 
     private readonly UIA3Automation _automation = new();
 
+    // STATE_SYSTEM_PRESSED - Windows danh dau nut taskbar cua app dang foreground bang co nay (MSAA/LegacyIAccessible).
+    private const int StateSystemPressed = 0x00800000;
+
     public IReadOnlyList<TaskbarIconInfo> Refresh()
     {
         var desktop = _automation.GetDesktop();
@@ -42,10 +45,33 @@ public sealed class TaskbarIconWatcher : IDisposable
             }
 
             var appId = automationId[AppIdPrefix.Length..];
-            result.Add(new TaskbarIconInfo(appId, button.Name, button.BoundingRectangle));
+            var name = button.Name ?? string.Empty;
+            var isPinned = name.Contains("pinned", StringComparison.OrdinalIgnoreCase);
+            var isRunning = name.Contains("running window", StringComparison.OrdinalIgnoreCase);
+            var isForeground = IsPressed(button);
+
+            result.Add(new TaskbarIconInfo(appId, name, button.BoundingRectangle, isPinned, isRunning, isForeground));
         }
 
         return result;
+    }
+
+    private static bool IsPressed(AutomationElement button)
+    {
+        try
+        {
+            if (!button.Patterns.LegacyIAccessible.IsSupported)
+            {
+                return false;
+            }
+
+            var state = (int)button.Patterns.LegacyIAccessible.Pattern.State.Value;
+            return (state & StateSystemPressed) != 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>

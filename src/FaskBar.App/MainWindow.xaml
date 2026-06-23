@@ -12,23 +12,55 @@
         Topmost="True"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
-        Height="48" Width="44">
-    <ItemsControl x:Name="IconsItemsControl">
-        <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-                <StackPanel Orientation="Horizontal" />
-            </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-            <DataTemplate>
-                <Button Width="44" Height="48"
-                        Background="Transparent" BorderThickness="0"
-                        Click="IconButton_Click"
-                        Tag="{Binding AppId}"
-                        ToolTip="{Binding DisplayName}">
-                    <Image Source="{Binding Icon}" Width="24" Height="24" />
-                </Button>
-            </DataTemplate>
-        </ItemsControl.ItemTemplate>
-    </ItemsControl>
+        SizeToContent="Width"
+        Height="48">
+    <Window.Resources>
+        <DataTemplate x:Key="PinnedIconTemplate">
+            <Button Width="44" Height="48"
+                    Background="Transparent" BorderThickness="0"
+                    Click="PinnedIconButton_Click"
+                    Tag="{Binding AppId}"
+                    ToolTip="{Binding DisplayName}">
+                <Image Source="{Binding Icon}" Width="24" Height="24" />
+            </Button>
+        </DataTemplate>
+
+        <DataTemplate x:Key="RunningIconTemplate">
+            <Button Width="44" Height="48"
+                    Background="Transparent" BorderThickness="0"
+                    Click="RunningIconButton_Click"
+                    Tag="{Binding AppId}"
+                    ToolTip="{Binding DisplayName}">
+                <Grid>
+                    <Border Background="#33FFFFFF" CornerRadius="4"
+                            Visibility="{Binding IsForegroundVisibility}" />
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Image Source="{Binding Icon}" Width="24" Height="24" />
+                        <Ellipse Width="6" Height="6" Margin="0,3,0,0" HorizontalAlignment="Center"
+                                 Fill="{Binding DotBrush}" />
+                    </StackPanel>
+                </Grid>
+            </Button>
+        </DataTemplate>
+    </Window.Resources>
+
+    <StackPanel Orientation="Horizontal">
+        <ItemsControl x:Name="PinnedItemsControl" ItemTemplate="{StaticResource PinnedIconTemplate}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+
+        <Border Width="1" Margin="4,10" Background="#33FFFFFF" />
+
+        <ItemsControl x:Name="RunningItemsControl" ItemTemplate="{StaticResource RunningIconTemplate}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+    </StackPanel>
 </Window>

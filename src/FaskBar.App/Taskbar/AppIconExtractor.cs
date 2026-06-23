@@ -14,12 +14,27 @@ public static class AppIconExtractor
 {
     public static BitmapSource? TryGetIcon(string appId, int size = 32)
     {
+        try
+        {
+            return TryGetIconCore(appId, size);
+        }
+        catch
+        {
+            // Mot so AppId (vd duong dan exe day du cua app pin kieu cu) khong duoc AppsFolder
+            // resolve dung cach va co the nem loi marshal COM - bo qua, coi nhu khong co icon.
+            return null;
+        }
+    }
+
+    private static BitmapSource? TryGetIconCore(string appId, int size)
+    {
         var parsingName = $@"shell:AppsFolder\{appId}";
+        var riid = typeof(NativeMethods.IShellItemImageFactory).GUID;
 
         var hr = NativeMethods.SHCreateItemFromParsingName(
-            parsingName, IntPtr.Zero, typeof(NativeMethods.IShellItemImageFactory).GUID, out var factoryObj);
+            parsingName, IntPtr.Zero, ref riid, out var factory);
 
-        if (hr != 0 || factoryObj is not NativeMethods.IShellItemImageFactory factory)
+        if (hr != 0 || factory is null)
         {
             return null;
         }
@@ -60,8 +75,8 @@ public static class AppIconExtractor
         public static extern int SHCreateItemFromParsingName(
             string pszPath,
             IntPtr pbc,
-            Guid riid,
-            out object ppv);
+            ref Guid riid,
+            out IShellItemImageFactory ppv);
 
         [DllImport("gdi32.dll")]
         public static extern bool DeleteObject(IntPtr hObject);

@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using FaskBar.App.Taskbar;
@@ -7,21 +9,23 @@ using FaskBar.App.Taskbar;
 namespace FaskBar.App;
 
 /// <summary>
-/// Overlay panel thay the toan bo vung icon list cua taskbar thuc (M1.2).
-/// Start/Search/System Tray/Clock van la native, chi vung danh sach app icon
-/// (tu icon dau den icon cuoi) la do FaskBar tu ve lai.
+/// Overlay panel thay the vung icon list cua taskbar thuc (M1.2 + layout 2 vung trai/phai).
+/// Trai = icon pinned (co the group thanh folder sau nay), click = launch/activate qua AppId (giong mo moi/mo lai cua so).
+/// Phai = app dang mo (running), luon co dot, sang hon khi dang la foreground; click = activate dung cua so dang chay qua Invoke pattern.
 /// </summary>
 public partial class MainWindow : Window
 {
     private readonly TaskbarIconWatcher _watcher = new();
     private readonly Dictionary<string, BitmapSource?> _iconCache = new();
-    private readonly ObservableCollection<TaskbarIconViewModel> _icons = new();
+    private readonly ObservableCollection<PinnedIconViewModel> _pinnedIcons = new();
+    private readonly ObservableCollection<RunningIconViewModel> _runningIcons = new();
     private DispatcherTimer? _timer;
 
     public MainWindow()
     {
         InitializeComponent();
-        IconsItemsControl.ItemsSource = _icons;
+        PinnedItemsControl.ItemsSource = _pinnedIcons;
+        RunningItemsControl.ItemsSource = _runningIcons;
         Loaded += MainWindow_Loaded;
     }
 
@@ -42,17 +46,17 @@ public partial class MainWindow : Window
             return;
         }
 
-        RepositionToCoverIconList(realIcons);
-        SyncIconsList(realIcons);
-    }
-
-    private void RepositionToCoverIconList(IReadOnlyList<TaskbarIconInfo> realIcons)
-    {
-        var left = realIcons.Min(i => i.BoundingRectangle.Left);
-        var right = realIcons.Max(i => i.BoundingRectangle.Right);
+        var leftmost = realIcons.Min(i => i.BoundingRectangle.Left);
         var top = realIcons.Min(i => i.BoundingRectangle.Top);
         var bottom = realIcons.Max(i => i.BoundingRectangle.Bottom);
+        RepositionTopLeft(leftmost, top, bottom);
 
+        SyncPinned(realIcons.Where(i => i.IsPinned).ToList());
+        SyncRunning(realIcons.Where(i => i.IsRunning).ToList());
+    }
+
+    private void RepositionTopLeft(int left, int top, int bottom)
+    {
         var source = PresentationSource.FromVisual(this);
         if (source?.CompositionTarget is null)
         {
@@ -61,28 +65,37 @@ public partial class MainWindow : Window
 
         var transform = source.CompositionTarget.TransformFromDevice;
         var topLeft = transform.Transform(new Point(left, top));
-        var bottomRight = transform.Transform(new Point(right, bottom));
+        var bottomRight = transform.Transform(new Point(left, bottom));
 
         Left = topLeft.X;
         Top = topLeft.Y;
-        Width = Math.Max(1, bottomRight.X - topLeft.X);
         Height = Math.Max(1, bottomRight.Y - topLeft.Y);
     }
 
-    private void SyncIconsList(IReadOnlyList<TaskbarIconInfo> realIcons)
+    private void SyncPinned(IReadOnlyList<TaskbarIconInfo> pinned)
     {
-        // Giu thu tu y het taskbar thuc; danh sach thuong it thay doi nen rebuild don gian la du.
-        var newAppIds = realIcons.Select(i => i.AppId).ToList();
-        var currentAppIds = _icons.Select(i => i.AppId).ToList();
-        if (newAppIds.SequenceEqual(currentAppIds))
+        var newIds = pinned.Select(i => i.AppId).ToList();
+        var currentIds = _pinnedIcons.Select(i => i.AppId).ToList();
+        if (newIds.SequenceEqual(currentIds))
         {
             return;
         }
 
-        _icons.Clear();
-        foreach (var icon in realIcons)
+        _pinnedIcons.Clear();
+        foreach (var icon in pinned)
         {
-            _icons.Add(new TaskbarIconViewModel(icon.AppId, icon.DisplayName, GetOrLoadIcon(icon.AppId)));
+            _pinnedIcons.Add(new PinnedIconViewModel(icon.AppId, icon.DisplayName, GetOrLoadIcon(icon.AppId)));
+        }
+    }
+
+    private void SyncRunning(IReadOnlyList<TaskbarIconInfo> running)
+    {
+        // Foreground co the doi moi lan refresh nen luon rebuild (danh sach running thuong khong dai).
+        _runningIcons.Clear();
+        foreach (var icon in running)
+        {
+            _runningIcons.Add(new RunningIconViewModel(
+                icon.AppId, icon.DisplayName, GetOrLoadIcon(icon.AppId), icon.IsForeground));
         }
     }
 
@@ -98,7 +111,25 @@ public partial class MainWindow : Window
         return icon;
     }
 
-    private void IconButton_Click(object sender, RoutedEventArgs e)
+    private void PinnedIconButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string appId })
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", $@"shell:AppsFolder\{appId}")
+                {
+                    UseShellExecute = true,
+                });
+            }
+            catch
+            {
+                // App khong the launch qua AppsFolder (vd AppId dang la duong dan exe cu) - bo qua cho M1.2/M1.3, se xu ly sau.
+            }
+        }
+    }
+
+    private void RunningIconButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { Tag: string appId })
         {
@@ -114,4 +145,10 @@ public partial class MainWindow : Window
     }
 }
 
-public sealed record TaskbarIconViewModel(string AppId, string DisplayName, BitmapSource? Icon);
+public sealed record PinnedIconViewModel(string AppId, string DisplayName, BitmapSource? Icon);
+
+public sealed record RunningIconViewModel(string AppId, string DisplayName, BitmapSource? Icon, bool IsForeground)
+{
+    public Visibility IsForegroundVisibility => IsForeground ? Visibility.Visible : Visibility.Collapsed;
+    public Brush DotBrush => IsForeground ? Brushes.White : Brushes.Gray;
+}

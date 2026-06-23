@@ -25,7 +25,17 @@ internal static class Program
         foreach (AutomationElement button in buttons)
         {
             var runtimeId = string.Join(",", button.Properties.RuntimeId.ValueOrDefault ?? Array.Empty<int>());
-            Console.WriteLine($"- Name='{button.Name}' AutomationId='{button.AutomationId}' ClassName='{button.ClassName}' RuntimeId=[{runtimeId}] Rect={button.BoundingRectangle}");
+            var patterns = string.Join(",", button.GetSupportedPatterns().Select(p => p.Name));
+            string selectedInfo = "n/a";
+            try
+            {
+                if (button.Patterns.SelectionItem.IsSupported)
+                {
+                    selectedInfo = button.Patterns.SelectionItem.Pattern.IsSelected.Value.ToString();
+                }
+            }
+            catch { }
+            Console.WriteLine($"- Name='{button.Name}' AutomationId='{button.AutomationId}' ClassName='{button.ClassName}' RuntimeId=[{runtimeId}] Patterns=[{patterns}] IsSelected={selectedInfo}");
         }
 
         Console.WriteLine();
