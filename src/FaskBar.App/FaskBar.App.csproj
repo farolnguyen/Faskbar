@@ -6,10 +6,16 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <!-- Chi dung de dev local qua duoc Smart App Control - xem scripts/setup-dev-codesign-cert.ps1 -->
+    <FaskBarDevSigningThumbprint>DE605C0679504BBC7FDB53B6470BE804F3E26133</FaskBarDevSigningThumbprint>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
   </ItemGroup>
+
+  <Target Name="SignDevBuild" AfterTargets="Build">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\scripts\sign-dev-build.ps1&quot; -TargetPath &quot;$(TargetDir)$(TargetName).exe&quot; -Thumbprint &quot;$(FaskBarDevSigningThumbprint)&quot;" />
+  </Target>
 
 </Project>

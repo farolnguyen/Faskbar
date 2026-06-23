@@ -19,9 +19,23 @@
             <Button Width="44" Height="48"
                     Background="Transparent" BorderThickness="0"
                     Click="PinnedIconButton_Click"
-                    Tag="{Binding AppId}"
+                    PreviewMouseLeftButtonDown="PinnedButton_PreviewMouseDown"
+                    PreviewMouseMove="PinnedButton_PreviewMouseMove"
+                    AllowDrop="True"
+                    DragOver="PinnedButton_DragOver"
+                    Drop="PinnedButton_Drop"
+                    Tag="{Binding DragAppId}"
                     ToolTip="{Binding DisplayName}">
-                <Image Source="{Binding Icon}" Width="24" Height="24" />
+                <Grid>
+                    <Image Source="{Binding Icon}" Width="24" Height="24" />
+                    <Border Visibility="{Binding GroupBadgeVisibility}"
+                            Background="#CC000000" CornerRadius="6"
+                            Width="14" Height="14"
+                            HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                        <TextBlock Text="{Binding GroupCount}" FontSize="9" Foreground="White"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </Grid>
             </Button>
         </DataTemplate>
 
