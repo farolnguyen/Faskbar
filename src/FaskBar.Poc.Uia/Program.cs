@@ -24,7 +24,19 @@ internal static class Program
 
         foreach (AutomationElement button in buttons)
         {
-            Console.WriteLine($"- Name='{button.Name}' Rect={button.BoundingRectangle}");
+            var runtimeId = string.Join(",", button.Properties.RuntimeId.ValueOrDefault ?? Array.Empty<int>());
+            Console.WriteLine($"- Name='{button.Name}' AutomationId='{button.AutomationId}' ClassName='{button.ClassName}' RuntimeId=[{runtimeId}] Rect={button.BoundingRectangle}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Cho 3s roi quet lai lan 2 de so sanh RuntimeId/AutomationId co on dinh khong...");
+        Thread.Sleep(3000);
+
+        var buttons2 = taskbar.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
+        foreach (AutomationElement button in buttons2)
+        {
+            var runtimeId = string.Join(",", button.Properties.RuntimeId.ValueOrDefault ?? Array.Empty<int>());
+            Console.WriteLine($"- Name='{button.Name}' AutomationId='{button.AutomationId}' RuntimeId=[{runtimeId}]");
         }
     }
 }

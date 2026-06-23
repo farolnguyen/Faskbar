@@ -5,16 +5,30 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FaskBar.App"
         mc:Ignorable="d"
-        Title="FaskBar Overlay POC"
+        Title="FaskBar Icon List Overlay (M1.2)"
         WindowStyle="None"
         AllowsTransparency="True"
-        Background="Transparent"
+        Background="#FF202020"
         Topmost="True"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
         Height="48" Width="44">
-    <Border Background="#AAFF6A00" BorderBrush="Red" BorderThickness="2">
-        <TextBlock Text="F" Foreground="White" FontWeight="Bold" FontSize="14"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
-    </Border>
+    <ItemsControl x:Name="IconsItemsControl">
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+            <DataTemplate>
+                <Button Width="44" Height="48"
+                        Background="Transparent" BorderThickness="0"
+                        Click="IconButton_Click"
+                        Tag="{Binding AppId}"
+                        ToolTip="{Binding DisplayName}">
+                    <Image Source="{Binding Icon}" Width="24" Height="24" />
+                </Button>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>
 </Window>
