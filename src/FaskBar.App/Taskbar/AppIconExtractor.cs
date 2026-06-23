@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -16,14 +17,39 @@ public static class AppIconExtractor
     {
         try
         {
-            return TryGetIconCore(appId, size);
+            var icon = TryGetIconCore(appId, size);
+            if (icon is not null)
+            {
+                return icon;
+            }
+
+            // Mot so app pin kieu cu (Implicit App Shortcut) khong co AppUserModelID dang ky trong
+            // AppsFolder - AppId luc nay chinh la duong dan file .exe, fallback trich icon truc tiep.
+            return TryGetIconFromFilePath(appId);
         }
         catch
         {
-            // Mot so AppId (vd duong dan exe day du cua app pin kieu cu) khong duoc AppsFolder
-            // resolve dung cach va co the nem loi marshal COM - bo qua, coi nhu khong co icon.
             return null;
         }
+    }
+
+    private static BitmapSource? TryGetIconFromFilePath(string possiblePath)
+    {
+        if (!File.Exists(possiblePath))
+        {
+            return null;
+        }
+
+        using var icon = System.Drawing.Icon.ExtractAssociatedIcon(possiblePath);
+        if (icon is null)
+        {
+            return null;
+        }
+
+        var bitmapSource = Imaging.CreateBitmapSourceFromHIcon(
+            icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+        bitmapSource.Freeze();
+        return bitmapSource;
     }
 
     private static BitmapSource? TryGetIconCore(string appId, int size)

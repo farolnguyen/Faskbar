@@ -258,6 +258,10 @@ public partial class MainWindow : Window
         if (sender is FrameworkElement { Tag: string appId })
         {
             _watcher.Activate(appId);
+
+            // Invoke pattern qua UIA khong luon thang duoc co che chong focus-stealing cua Windows
+            // (vi nguoi click that la app nay, khong phai explorer.exe) - ep foreground bang Win32 truc tiep.
+            ForegroundActivator.TryActivateByAppId(appId);
         }
     }
 
