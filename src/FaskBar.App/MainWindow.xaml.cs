@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private readonly TaskbarIconWatcher _watcher = new();
     private readonly PinnedGroupStore _groupStore = new();
     private readonly Dictionary<string, BitmapSource?> _iconCache = new();
+    private readonly Dictionary<string, string> _appDisplayNames = new();
     private readonly ObservableCollection<PinnedSlotViewModel> _pinnedSlots = new();
     private readonly ObservableCollection<RunningIconViewModel> _runningIcons = new();
     private DispatcherTimer? _timer;
@@ -85,6 +86,8 @@ public partial class MainWindow : Window
 
         foreach (var icon in pinned)
         {
+            _appDisplayNames[icon.AppId] = icon.DisplayName;
+
             if (emitted.Contains(icon.AppId))
             {
                 continue;
@@ -150,19 +153,60 @@ public partial class MainWindow : Window
 
     private void PinnedIconButton_Click(object sender, RoutedEventArgs e)
     {
+        if (sender is not FrameworkElement { DataContext: PinnedSlotViewModel slot } element)
+        {
+            return;
+        }
+
+        if (slot.IsGroup)
+        {
+            OpenFolderPopup(slot, element);
+        }
+        else
+        {
+            LaunchApp(slot.DragAppId);
+        }
+    }
+
+    private void OpenFolderPopup(PinnedSlotViewModel slot, UIElement anchor)
+    {
+        var items = slot.AppIds
+            .Select(id => new FolderPopupItemViewModel(id, CleanAppName(_appDisplayNames.GetValueOrDefault(id, id)), GetOrLoadIcon(id)))
+            .ToList();
+
+        FolderPopupItemsControl.ItemsSource = items;
+        FolderPopup.PlacementTarget = anchor;
+        FolderPopup.IsOpen = true;
+    }
+
+    private static string CleanAppName(string rawName)
+    {
+        var idx = rawName.IndexOf(" - ", StringComparison.Ordinal);
+        var name = idx >= 0 ? rawName[..idx] : rawName;
+        return name.Replace(" pinned", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
+    }
+
+    private void FolderPopupItem_Click(object sender, RoutedEventArgs e)
+    {
         if (sender is FrameworkElement { Tag: string appId })
         {
-            try
+            LaunchApp(appId);
+            FolderPopup.IsOpen = false;
+        }
+    }
+
+    private static void LaunchApp(string appId)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $@"shell:AppsFolder\{appId}")
             {
-                Process.Start(new ProcessStartInfo("explorer.exe", $@"shell:AppsFolder\{appId}")
-                {
-                    UseShellExecute = true,
-                });
-            }
-            catch
-            {
-                // App khong the launch qua AppsFolder (vd AppId dang la duong dan exe cu) - bo qua cho M1.2/M1.3, se xu ly sau.
-            }
+                UseShellExecute = true,
+            });
+        }
+        catch
+        {
+            // App khong the launch qua AppsFolder (vd AppId dang la duong dan exe cu) - bo qua, se xu ly sau.
         }
     }
 
@@ -243,6 +287,8 @@ public sealed record PinnedSlotViewModel(
     public string ExtraCountText => $"+{ExtraCount}";
     public Visibility ExtraCountBadgeVisibility => ExtraCount > 0 ? Visibility.Visible : Visibility.Collapsed;
 }
+
+public sealed record FolderPopupItemViewModel(string AppId, string DisplayName, BitmapSource? Icon);
 
 public sealed record RunningIconViewModel(string AppId, string DisplayName, BitmapSource? Icon, bool IsForeground)
 {

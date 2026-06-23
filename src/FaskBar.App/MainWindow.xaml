@@ -78,6 +78,7 @@
         </DataTemplate>
     </Window.Resources>
 
+    <Grid>
     <StackPanel Orientation="Horizontal">
         <ItemsControl x:Name="PinnedItemsControl" ItemTemplate="{StaticResource PinnedIconTemplate}">
             <ItemsControl.ItemsPanel>
@@ -97,4 +98,29 @@
             </ItemsControl.ItemsPanel>
         </ItemsControl>
     </StackPanel>
+
+    <Popup x:Name="FolderPopup" Placement="Top" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+        <Border Background="#EE2B2B2B" CornerRadius="8" Padding="10" BorderBrush="#33FFFFFF" BorderThickness="1">
+            <ItemsControl x:Name="FolderPopupItemsControl">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Width="160" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Width="70" Height="70" Background="Transparent" BorderThickness="0"
+                                Click="FolderPopupItem_Click" Tag="{Binding AppId}">
+                            <StackPanel>
+                                <Image Source="{Binding Icon}" Width="32" Height="32" />
+                                <TextBlock Text="{Binding DisplayName}" Foreground="White" FontSize="9"
+                                           TextWrapping="Wrap" TextAlignment="Center" MaxHeight="28" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+    </Popup>
+    </Grid>
 </Window>
