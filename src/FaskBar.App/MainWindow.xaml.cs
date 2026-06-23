@@ -99,13 +99,15 @@ public partial class MainWindow : Window
                 }
 
                 var firstMemberStillPinned = group.FirstOrDefault(id => pinned.Any(p => p.AppId == id)) ?? group[0];
+                var memberIcons = group.Select(GetOrLoadIcon).ToList();
                 slots.Add(new PinnedSlotViewModel(
-                    firstMemberStillPinned, $"Folder ({group.Count} app)", GetOrLoadIcon(firstMemberStillPinned), group));
+                    firstMemberStillPinned, $"Folder ({group.Count} app)", GetOrLoadIcon(firstMemberStillPinned), group, memberIcons));
             }
             else
             {
                 emitted.Add(icon.AppId);
-                slots.Add(new PinnedSlotViewModel(icon.AppId, icon.DisplayName, GetOrLoadIcon(icon.AppId), new[] { icon.AppId }));
+                slots.Add(new PinnedSlotViewModel(
+                    icon.AppId, icon.DisplayName, GetOrLoadIcon(icon.AppId), new[] { icon.AppId }, Array.Empty<BitmapSource?>()));
             }
         }
 
@@ -223,11 +225,23 @@ public partial class MainWindow : Window
     }
 }
 
-public sealed record PinnedSlotViewModel(string DragAppId, string DisplayName, BitmapSource? Icon, IReadOnlyList<string> AppIds)
+public sealed record PinnedSlotViewModel(
+    string DragAppId, string DisplayName, BitmapSource? Icon, IReadOnlyList<string> AppIds, IReadOnlyList<BitmapSource?> MemberIcons)
 {
+    private const int CollageSlots = 4;
+
     public bool IsGroup => AppIds.Count > 1;
-    public Visibility GroupBadgeVisibility => IsGroup ? Visibility.Visible : Visibility.Collapsed;
-    public int GroupCount => AppIds.Count;
+    public Visibility SingleIconVisibility => IsGroup ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility GroupVisibility => IsGroup ? Visibility.Visible : Visibility.Collapsed;
+
+    public BitmapSource? CollageIcon0 => MemberIcons.ElementAtOrDefault(0);
+    public BitmapSource? CollageIcon1 => MemberIcons.ElementAtOrDefault(1);
+    public BitmapSource? CollageIcon2 => MemberIcons.ElementAtOrDefault(2);
+    public BitmapSource? CollageIcon3 => MemberIcons.ElementAtOrDefault(3);
+
+    public int ExtraCount => Math.Max(0, AppIds.Count - CollageSlots);
+    public string ExtraCountText => $"+{ExtraCount}";
+    public Visibility ExtraCountBadgeVisibility => ExtraCount > 0 ? Visibility.Visible : Visibility.Collapsed;
 }
 
 public sealed record RunningIconViewModel(string AppId, string DisplayName, BitmapSource? Icon, bool IsForeground)

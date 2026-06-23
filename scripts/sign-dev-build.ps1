@@ -1,10 +1,13 @@
 param(
     [Parameter(Mandatory = $true)]
-    [string]$TargetPath,
+    [string]$TargetPaths,
 
     [Parameter(Mandatory = $true)]
     [string]$Thumbprint
 )
+
+# -File mode khong tach mang theo dau phay, nen truyen nhieu path noi voi nhau bang ';' roi tu split.
+$paths = $TargetPaths -split ';'
 
 $cert = Get-ChildItem "Cert:\CurrentUser\My\$Thumbprint" -ErrorAction SilentlyContinue
 
@@ -13,8 +16,14 @@ if (-not $cert) {
     exit 0
 }
 
-$result = Set-AuthenticodeSignature -FilePath $TargetPath -Certificate $cert
+foreach ($path in $paths) {
+    if (-not (Test-Path $path)) {
+        continue
+    }
 
-if ($result.Status -ne "Valid") {
-    Write-Warning "Sign FaskBar.App.exe khong thanh cong: $($result.StatusMessage)"
+    $result = Set-AuthenticodeSignature -FilePath $path -Certificate $cert
+
+    if ($result.Status -ne "Valid") {
+        Write-Warning "Sign $path khong thanh cong: $($result.StatusMessage)"
+    }
 }

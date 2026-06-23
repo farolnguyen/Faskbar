@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <Target Name="SignDevBuild" AfterTargets="Build">
-    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\scripts\sign-dev-build.ps1&quot; -TargetPath &quot;$(TargetDir)$(TargetName).exe&quot; -Thumbprint &quot;$(FaskBarDevSigningThumbprint)&quot;" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\scripts\sign-dev-build.ps1&quot; -TargetPaths &quot;$(TargetDir)$(TargetName).exe;$(TargetPath)&quot; -Thumbprint &quot;$(FaskBarDevSigningThumbprint)&quot;" />
   </Target>
 
 </Project>

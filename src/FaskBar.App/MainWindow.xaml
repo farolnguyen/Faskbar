@@ -27,12 +27,32 @@
                     Tag="{Binding DragAppId}"
                     ToolTip="{Binding DisplayName}">
                 <Grid>
-                    <Image Source="{Binding Icon}" Width="24" Height="24" />
-                    <Border Visibility="{Binding GroupBadgeVisibility}"
+                    <Image Source="{Binding Icon}" Width="24" Height="24"
+                           Visibility="{Binding SingleIconVisibility}" />
+
+                    <Border Visibility="{Binding GroupVisibility}"
+                            Width="28" Height="28" CornerRadius="6" Background="#40FFFFFF">
+                        <Grid Margin="3">
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Row="0" Grid.Column="0" Source="{Binding CollageIcon0}" Margin="0.5" />
+                            <Image Grid.Row="0" Grid.Column="1" Source="{Binding CollageIcon1}" Margin="0.5" />
+                            <Image Grid.Row="1" Grid.Column="0" Source="{Binding CollageIcon2}" Margin="0.5" />
+                            <Image Grid.Row="1" Grid.Column="1" Source="{Binding CollageIcon3}" Margin="0.5" />
+                        </Grid>
+                    </Border>
+
+                    <Border Visibility="{Binding ExtraCountBadgeVisibility}"
                             Background="#CC000000" CornerRadius="6"
                             Width="14" Height="14"
                             HorizontalAlignment="Right" VerticalAlignment="Bottom">
-                        <TextBlock Text="{Binding GroupCount}" FontSize="9" Foreground="White"
+                        <TextBlock Text="{Binding ExtraCountText}" FontSize="9" Foreground="White"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                 </Grid>
