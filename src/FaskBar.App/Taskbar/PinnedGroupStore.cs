@@ -1,11 +1,23 @@
+using System.IO;
+using System.Text.Json;
+
 namespace FaskBar.App.Taskbar;
 
 /// <summary>
-/// Quan ly cac group (folder) icon pinned, trong nho tam (M1.6 se them persist xuong dia).
+/// Quan ly cac group (folder) icon pinned. Tu dong load luc khoi tao va save xuong dia
+/// (%LocalAppData%\FaskBar\groups.json) moi khi co thay doi, de group khong mat sau khi tat may.
 /// </summary>
 public sealed class PinnedGroupStore
 {
-    private readonly List<List<string>> _groups = new();
+    private static readonly string FilePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FaskBar", "groups.json");
+
+    private readonly List<List<string>> _groups;
+
+    public PinnedGroupStore()
+    {
+        _groups = Load();
+    }
 
     public List<string>? FindGroupContaining(string appId) =>
         _groups.FirstOrDefault(g => g.Contains(appId));
@@ -59,6 +71,40 @@ public sealed class PinnedGroupStore
         else
         {
             _groups.Add(new List<string> { targetAppId, sourceAppId });
+        }
+
+        Save();
+    }
+
+    private static List<List<string>> Load()
+    {
+        try
+        {
+            if (!File.Exists(FilePath))
+            {
+                return new();
+            }
+
+            var json = File.ReadAllText(FilePath);
+            return JsonSerializer.Deserialize<List<List<string>>>(json) ?? new();
+        }
+        catch
+        {
+            // File loi/hong - bat dau lai voi danh sach rong, khong lam crash app.
+            return new();
+        }
+    }
+
+    private void Save()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
+            File.WriteAllText(FilePath, JsonSerializer.Serialize(_groups));
+        }
+        catch
+        {
+            // Khong ghi duoc file (vd het quyen) - bo qua, group van dung duoc trong session hien tai.
         }
     }
 }
